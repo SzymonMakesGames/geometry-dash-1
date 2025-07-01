@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry Dash Lite</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #222;
+    }
+    #gameCanvas {
+      display: block;
+      background: #333;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Game state
+    let player = { x: 50, y: 300, size: 30, vy: 0, gravity: 0.6, jump: -12, grounded: false };
+    let obstacles = [];
+    let frame = 0;
+    let speed = 4;
+
+    function loop() {
+      update();
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    function update() {
+      frame++;
+
+      // Spawn obstacles every 150 frames
+      if (frame % 150 === 0) {
+        const height = Math.random() * 50 + 20;
+        obstacles.push({ x: canvas.width, y: canvas.height - height, width: 20, height });
+      }
+
+      // Move obstacles
+      obstacles.forEach(o => o.x -= speed);
+      obstacles = obstacles.filter(o => o.x + o.width > 0);
+
+      // Player gravity
+      player.vy += player.gravity;
+      player.y += player.vy;
+      if (player.y + player.size > canvas.height) {
+        player.y = canvas.height - player.size;
+        player.vy = 0;
+        player.grounded = true;
+      } else {
+        player.grounded = false;
+      }
+
+      // Collision detection
+      obstacles.forEach(o => {
+        if (
+          player.x < o.x + o.width &&
+          player.x + player.size > o.x &&
+          player.y < o.y + o.height &&
+          player.y + player.size > o.y
+        ) {
+          resetGame();
+        }
+      });
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Ground line
+      ctx.fillStyle = '#555';
+      ctx.fillRect(0, canvas.height - 10, canvas.width, 10);
+
+      // Player
+      ctx.fillStyle = '#08f';
+      ctx.fillRect(player.x, player.y, player.size, player.size);
+
+      // Obstacles
+      ctx.fillStyle = '#e74c3c';
+      obstacles.forEach(o => ctx.fillRect(o.x, o.y, o.width, o.height));
+    }
+
+    function resetGame() {
+      player.y = 300;
+      player.vy = 0;
+      obstacles = [];
+      frame = 0;
+    }
+
+    // Jump on space or click
+    window.addEventListener('keydown', e => {
+      if (e.code === 'Space' && player.grounded) {
+        player.vy = player.jump;
+      }
+    });
+    window.addEventListener('mousedown', () => {
+      if (player.grounded) player.vy = player.jump;
+    });
+
+    // Start game loop
+    loop();
+  </script>
+</body>
+</html>
